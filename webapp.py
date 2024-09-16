@@ -21,18 +21,18 @@ def find_instrument_column(df):
             return col
     return None
 
-# Page for uploading file
+# Page for uploading the main file
 def upload_page():
     st.title("Upload CSV or Excel")
 
-    # File uploader for CSV or Excel
-    uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+    # File uploader for the first CSV or Excel file
+    uploaded_file = st.file_uploader("Choose a CSV or Excel file for main data", type=["csv", "xlsx"])
     
     if uploaded_file is not None:
         try:
             # Load the file using the cached function
             data = load_file(uploaded_file)
-            st.session_state['uploaded_data'] = data  # Store data in session_state
+            st.session_state['uploaded_data'] = data  # Store main data in session_state
 
             # Display the data in a table
             st.dataframe(data)
@@ -40,19 +40,33 @@ def upload_page():
         except Exception as e:
             st.error(f"Error: {e}")
 
-# Page for filtering settings
+# Page for filtering settings with a separate CSV file
 def filtering_page():
-    st.title("Filtering Settings")
+    st.title("Upload a Separate CSV for Filtering")
 
-    # Check if a file has been uploaded first
-    if 'uploaded_data' in st.session_state:
-        data = st.session_state['uploaded_data']
+    # File uploader for a separate CSV file for filtering
+    filter_file = st.file_uploader("Choose a CSV file for filtering", type=["csv"])
+    
+    if filter_file is not None:
+        try:
+            # Load the filtering file using the cached function
+            filter_data = load_file(filter_file)
+            st.session_state['filter_data'] = filter_data  # Store filter data in session_state
+
+            # Display the filter data
+            st.dataframe(filter_data)
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+    # Proceed with filtering if the file is uploaded
+    if 'filter_data' in st.session_state:
+        data = st.session_state['filter_data']
 
         # Find the correct instrument column
         instrument_column = find_instrument_column(data)
 
         if instrument_column:
-            # Populate the instrument names from the uploaded file
+            # Populate the instrument names from the filtering file
             instrument_names = data[instrument_column].unique()
 
             # Create a selectbox for Instrument Name
@@ -65,9 +79,9 @@ def filtering_page():
             st.write(f"Filtered data for: {selected_instrument}")
             st.dataframe(filtered_data)
         else:
-            st.error(f"Could not find an 'Instrument Name' column. Please check your file's column headers.")
+            st.error(f"Could not find an 'Instrument Name' column in the filtering file. Please check your file's column headers.")
     else:
-        st.write("Please upload a file first on the 'Upload' page.")
+        st.write("Please upload a separate CSV file for filtering.")
 
 # Main function to create the sidebar and navigation
 def main():
