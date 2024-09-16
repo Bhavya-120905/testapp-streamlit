@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 
+# Possible column names that could represent the "Instrument Name"
+INSTRUMENT_NAME_COLUMNS = ['SEM_INSTRUMENT_NAME','Name','Names', 'Instrument', 'Instrument Name', 'Stock Name']
+
 # Function to upload and cache the file
 @st.cache_data
 def load_file(uploaded_file):
@@ -10,6 +13,13 @@ def load_file(uploaded_file):
         return pd.read_excel(uploaded_file)
     else:
         return None
+
+# Function to find the correct "Instrument Name" column
+def find_instrument_column(df):
+    for col in INSTRUMENT_NAME_COLUMNS:
+        if col in df.columns:
+            return col
+    return None
 
 # Page for uploading file
 def upload_page():
@@ -38,19 +48,24 @@ def filtering_page():
     if 'uploaded_data' in st.session_state:
         data = st.session_state['uploaded_data']
 
-        # Populate the instrument names from the uploaded file
-        instrument_names = data['SEM_INSTRUMENT_NAME'].unique()
+        # Find the correct instrument column
+        instrument_column = find_instrument_column(data)
 
-        # Create a selectbox for Instrument Name
-        selected_instrument = st.selectbox("Select Instrument Name", instrument_names)
+        if instrument_column:
+            # Populate the instrument names from the uploaded file
+            instrument_names = data[instrument_column].unique()
 
-        # Filter the data based on selected instrument
-        filtered_data = data[data['SEM_INSTRUMENT_NAME'] == selected_instrument]
+            # Create a selectbox for Instrument Name
+            selected_instrument = st.selectbox(f"Select Instrument ({instrument_column})", instrument_names)
 
-        # Display the filtered data
-        st.write(f"Filtered data for: {selected_instrument}")
-        st.dataframe(filtered_data)
+            # Filter the data based on selected instrument
+            filtered_data = data[data[instrument_column] == selected_instrument]
 
+            # Display the filtered data
+            st.write(f"Filtered data for: {selected_instrument}")
+            st.dataframe(filtered_data)
+        else:
+            st.error(f"Could not find an 'Instrument Name' column. Please check your file's column headers.")
     else:
         st.write("Please upload a file first on the 'Upload' page.")
 
